@@ -1,26 +1,3 @@
-// 商品データ一覧（外部ファイル）
-export default [
-    { id: 1, name: "TシャツA", price: 3000, image: "https://placehold.jp/150x150.png", generation: ["2期生"], talent: ["A2"], category: ["Tシャツ"] },
-    { id: 2, name: "キーホルダーB", price: 1200, image: "https://placehold.jp/150x150.png", generation: ["2期生"], talent: ["B2", "A2"], category: ["キーホルダー"] },
-    { id: 3, name: "ポスターC", price: 800, image: "https://placehold.jp/150x150.png", generation: ["4期生"], talent: ["A4"], category: ["ポスター"] },
-    { id: 4, name: "TシャツD", price: 3200, image: "https://placehold.jp/150x150.png", generation: ["1期生"], talent: ["A1"], category: ["Tシャツ"] },
-    { id: 5, name: "キーホルダーE", price: 1100, image: "https://placehold.jp/150x150.png", generation: ["3期生"], talent: ["A3"], category: ["キーホルダー"] },
-    { id: 6, name: "ポスターF", price: 900, image: "https://placehold.jp/150x150.png", generation: ["2期生"], talent: ["C2"], category: ["ポスター"] },
-    { id: 7, name: "TシャツG", price: 3500, image: "https://placehold.jp/150x150.png", generation: ["4期生"], talent: ["B4"], category: ["Tシャツ"] },
-    { id: 8, name: "キーホルダーH", price: 1300, image: "https://placehold.jp/150x150.png", generation: ["1期生"], talent: ["B1"], category: ["キーホルダー"] },
-    { id: 9, name: "ポスターI", price: 850, image: "https://placehold.jp/150x150.png", generation: ["3期生"], talent: ["B3"], category: ["ポスター"] },
-    { id: 10, name: "TシャツJ", price: 3100, image: "https://placehold.jp/150x150.png", generation: ["2期生"], talent: ["D2"], category: ["Tシャツ"] },
-    { id: 11, name: "キーホルダーK", price: 1250, image: "https://placehold.jp/150x150.png", generation: ["4期生"], talent: ["C4"], category: ["キーホルダー"] },
-    { id: 12, name: "ポスターL", price: 950, image: "https://placehold.jp/150x150.png", generation: ["1期生"], talent: ["C1"], category: ["ポスター"] },
-    { id: 13, name: "TシャツM", price: 3400, image: "https://placehold.jp/150x150.png", generation: ["3期生"], talent: ["C3"], category: ["Tシャツ"] },
-    { id: 14, name: "キーホルダーN", price: 1400, image: "https://placehold.jp/150x150.png", generation: ["2期生"], talent: ["E2"], category: ["キーホルダー"] },
-    { id: 15, name: "ポスターO", price: 1000, image: "https://placehold.jp/150x150.png", generation: ["4期生"], talent: ["D4"], category: ["ポスター"] },
-    { id: 16, name: "TシャツP", price: 3600, image: "https://placehold.jp/150x150.png", generation: ["1期生"], talent: ["D1"], category: ["Tシャツ"] },
-    { id: 17, name: "キーホルダーQ", price: 1500, image: "https://placehold.jp/150x150.png", generation: ["3期生"], talent: ["D3"], category: ["キーホルダー"] },
-    { id: 18, name: "ポスターR", price: 1050, image: "https://placehold.jp/150x150.png", generation: ["2期生"], talent: ["F2"], category: ["ポスター"] },
-    { id: 19, name: "TシャツS", price: 3700, image: "https://placehold.jp/150x150.png", generation: ["4期生"], talent: ["E4"], category: ["Tシャツ"] },
-    { id: 20, name: "キーホルダーT", price: 1600, image: "https://placehold.jp/150x150.png", generation: ["1期生"], talent: ["E1"], category: ["キーホルダー"] },
-    { id: 21, name: "ノータグ商品", price: 500, image: "https://placehold.jp/150x150.png" },
-    { id: 22, name: "複数タグ商品", price: 2000, image: "https://placehold.jp/150x150.png", generation: ["1期生", "2期生"], talent: ["A1", "A2"], category: ["Tシャツ", "キーホルダー"] },
-    { id: 23, name: "ユニット商品", price: 99000, image: "https://placehold.jp/150x150.png", generation: ["ユニット１"], talent: ["A1", "B1", "C1"], category: ["同人誌"] },
-];
+// 商品データ一覧をJSONファイルから読み込む
+import products from './products.json';
+export default products;

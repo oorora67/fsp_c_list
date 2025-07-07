@@ -4,16 +4,16 @@
     <div class="tag-list-bar">
       <div class="tag-list-group">
         <span class="tag-list-label">ユニット</span>
-        <span v-for="gen in sortedUnique(flattenTagArray(tagOrder.generation))" :key="'gen-'+gen" class="tag-badge tag-list-badge generation-badge" :class="{ selected: selectedTag.generation.includes(gen) }" @click="toggleTag('generation', gen)">{{ gen }}</span>
+        <span v-for="gen in sortedUnique(flattenTagArray(tagOrder.generation), 'generation')" :key="'gen-'+gen" class="tag-badge tag-list-badge generation-badge" :class="{ selected: selectedTag.generation.includes(gen) }" @click="toggleTag('generation', gen)">{{ gen }}</span>
       </div>
       <!-- タレントタグをユニットごとに分けて表示。ユニットで絞り込み中は選択中のみ表示 -->
-      <div class="tag-list-group" v-for="gen in (selectedTag.generation.length ? selectedTag.generation : sortedUnique(flattenTagArray(tagOrder.generation)))" :key="'talent-group-'+gen">
+      <div class="tag-list-group" v-for="gen in (selectedTag.generation.length ? selectedTag.generation : sortedUnique(flattenTagArray(tagOrder.generation), 'generation'))" :key="'talent-group-'+gen">
         <span class="tag-list-label">{{ gen }}</span>
-        <span v-for="talent in getTalentsByGeneration(gen)" :key="'talent-'+gen+'-'+talent" class="tag-badge tag-list-badge talent-badge" :class="{ selected: selectedTag.talent.includes(talent) }" @click="toggleTag('talent', talent)">{{ talent }}</span>
+        <span v-for="talent in sortedUnique(getTalentsByGeneration(gen), 'talent', gen)" :key="'talent-'+gen+'-'+talent" class="tag-badge tag-list-badge talent-badge" :class="{ selected: selectedTag.talent.includes(talent) }" @click="toggleTag('talent', talent)">{{ talent }}</span>
       </div>
       <div class="tag-list-group">
         <span class="tag-list-label">カテゴリ</span>
-        <span v-for="cat in sortedUnique(flattenTagArray(tagOrder.category))" :key="'cat-'+cat" class="tag-badge tag-list-badge category-badge" :class="{ selected: selectedTag.category.includes(cat) }" @click="toggleTag('category', cat)">{{ cat }}</span>
+        <span v-for="cat in sortedUnique(flattenTagArray(tagOrder.category), 'category')" :key="'cat-'+cat" class="tag-badge tag-list-badge category-badge" :class="{ selected: selectedTag.category.includes(cat) }" @click="toggleTag('category', cat)">{{ cat }}</span>
       </div>
     </div>
     <!-- 絞り込み中のタグ表示（タグ一覧バーの下） -->
@@ -36,7 +36,7 @@
     <table class="product-table-amazon">
       <thead>
         <tr>
-          <th>画像</th>
+          <th v-if="showImage">画像</th>
           <th>商品名/価格/タグ</th>
           <th>数量</th>
           <th>合計</th>
@@ -45,7 +45,7 @@
       </thead>
       <tbody>
         <tr v-for="product in flatFilteredProducts" :key="product.id">
-          <td>
+          <td v-if="showImage">
             <img :src="product.image" :alt="product.name" class="product-image-amazon-table" />
           </td>
           <td class="product-name-cell">
@@ -95,6 +95,9 @@ const quantities = ref({});
 // タグで絞り込み用の状態（種類ごとに複数選択対応）
 const selectedTag = ref({ generation: [], talent: [], category: [] });
 
+// 画像表示用の変数
+const showImage = ref(false);
+
 watch(
   () => props.products,
   (val) => {
@@ -113,9 +116,53 @@ const hasAnyTagSelected = computed(() => {
   );
 });
 
+// 商品ソート用共通関数
+function sortProductsByTagOrder(list, tagOrder) {
+  const genOrder = tagOrder.generation;
+  const talentOrder = tagOrder.talent;
+  const catOrder = tagOrder.category;
+  return list.slice().sort((a, b) => {
+    // タグが複数ある場合は最初に一致するタグのindexを使い、
+    // タグ数が多い方を優先（タグ数が多い=先に並ぶ）
+    const aGenArr = [].concat(a.product ? a.product.generation : a.generation || []);
+    const bGenArr = [].concat(b.product ? b.product.generation : b.generation || []);
+    if (aGenArr.length !== bGenArr.length) return bGenArr.length - aGenArr.length;
+    const aGenIdx = Math.min(...aGenArr.map(g => genOrder.indexOf(g)).filter(i => i >= 0), 9999);
+    const bGenIdx = Math.min(...bGenArr.map(g => genOrder.indexOf(g)).filter(i => i >= 0), 9999);
+    if (aGenIdx !== bGenIdx) return aGenIdx - bGenIdx;
+    const aTalArr = [].concat(a.product ? a.product.talent : a.talent || []);
+    const bTalArr = [].concat(b.product ? b.product.talent : b.talent || []);
+    if (aTalArr.length !== bTalArr.length) return bTalArr.length - aTalArr.length;
+    const aTalIdx = Math.min(...aTalArr.map(t => talentOrder.indexOf(t)).filter(i => i >= 0), 9999);
+    const bTalIdx = Math.min(...bTalArr.map(t => talentOrder.indexOf(t)).filter(i => i >= 0), 9999);
+    if (aTalIdx !== bTalIdx) return aTalIdx - bTalIdx;
+    const aCatArr = [].concat(a.product ? a.product.category : a.category || []);
+    const bCatArr = [].concat(b.product ? b.product.category : b.category || []);
+    if (aCatArr.length !== bCatArr.length) return bCatArr.length - aCatArr.length;
+    const aCatIdx = Math.min(...aCatArr.map(c => catOrder.indexOf(c)).filter(i => i >= 0), 9999);
+    const bCatIdx = Math.min(...bCatArr.map(c => catOrder.indexOf(c)).filter(i => i >= 0), 9999);
+    if (aCatIdx !== bCatIdx) return aCatIdx - bCatIdx;
+    if (a.product && b.product) {
+      if (!isNaN(Number(a.product.id)) && !isNaN(Number(b.product.id))) {
+        return Number(a.product.id) - Number(b.product.id);
+      }
+      return String(a.product.id).localeCompare(String(b.product.id), 'ja');
+    } else {
+      if (!isNaN(Number(a.id)) && !isNaN(Number(b.id))) {
+        return Number(a.id) - Number(b.id);
+      }
+      return String(a.id).localeCompare(String(b.id), 'ja');
+    }
+  });
+}
+
 // テーブル用：全商品をタグで絞り込んだリスト（複数タグ対応）
 const flatFilteredProducts = computed(() => {
   let list = props.products;
+  // tagFlagがtrueのものは除外
+  list = list.filter((p) => !p.tagFlag);
+
+  // タグで絞り込み
   if (selectedTag.value.generation.length) {
     list = list.filter((p) => (p.generation || []).some((g) => selectedTag.value.generation.includes(g)));
   }
@@ -125,34 +172,8 @@ const flatFilteredProducts = computed(() => {
   if (selectedTag.value.category.length) {
     list = list.filter((p) => (p.category || []).some((c) => selectedTag.value.category.includes(c)));
   }
-  // ジェネレーションタグ内でソート→タレント順でソート→カテゴリタグでソート
-  return list.slice().sort((a, b) => {
-    // ジェネレーションタグ内で昇順
-    const genAList = (a.generation || []).slice().sort();
-    const genBList = (b.generation || []).slice().sort();
-    for (let i = 0; i < Math.max(genAList.length, genBList.length); i++) {
-      const gA = genAList[i] || '';
-      const gB = genBList[i] || '';
-      if (gA !== gB) return gA.localeCompare(gB, 'ja');
-    }
-    // タレントタグ内で昇順
-    const talAList = (a.talent || []).slice().sort();
-    const talBList = (b.talent || []).slice().sort();
-    for (let i = 0; i < Math.max(talAList.length, talBList.length); i++) {
-      const tA = talAList[i] || '';
-      const tB = talBList[i] || '';
-      if (tA !== tB) return tA.localeCompare(tB, 'ja');
-    }
-    // カテゴリタグ内で昇順
-    const catAList = (a.category || []).slice().sort();
-    const catBList = (b.category || []).slice().sort();
-    for (let i = 0; i < Math.max(catAList.length, catBList.length); i++) {
-      const cA = catAList[i] || '';
-      const cB = catBList[i] || '';
-      if (cA !== cB) return cA.localeCompare(cB, 'ja');
-    }
-    return 0;
-  });
+
+  return sortProductsByTagOrder(list, props.tagOrder);
 });
 
 const filteredTalentTags = computed(() => {
@@ -217,8 +238,31 @@ function flattenTagArray(arr) {
 function unique(arr) {
   return [...new Set(arr)];
 }
-function sortedUnique(arr) {
-  // 文字列として昇順ソート
+function sortedUnique(arr, type, gen) {
+  // タグフラグtrueのID順でソート
+  if (type && props.tagOrder && props.products) {
+    // tagFlag trueの商品をID順で抽出
+    let tagFlagTrue = props.products.filter(p => p.tagFlag);
+    if (type === 'talent' && gen) {
+      // ユニットごとに分けて表示する場合はgeneration一致のみ
+      tagFlagTrue = tagFlagTrue.filter(p => (p.generation || []).includes(gen));
+    }
+    tagFlagTrue = tagFlagTrue.sort((a, b) => {
+      if (!isNaN(Number(a.id)) && !isNaN(Number(b.id))) {
+        return Number(a.id) - Number(b.id);
+      }
+      return String(a.id).localeCompare(String(b.id), 'ja');
+    });
+    // type: 'generation' | 'talent' | 'category'
+    const tagArr = [];
+    tagFlagTrue.forEach(p => {
+      (Array.isArray(p[type]) ? p[type] : (p[type] ? [p[type]] : [])).forEach(t => {
+        if (t && !tagArr.includes(t)) tagArr.push(t);
+      });
+    });
+    return tagArr;
+  }
+  // fallback: 通常の昇順
   return unique(arr).sort((a, b) => (a > b ? 1 : a < b ? -1 : 0));
 }
 // ...既存のscript setupの末尾に追加...

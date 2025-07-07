@@ -1,9 +1,9 @@
 <template>
   <div>
     <div>
-      <button @click="sortByTag('generation')">ユニット順</button>
-      <button @click="sortByTag('talent')">タレント順</button>
-      <button @click="sortByTag('category')">カテゴリ順</button>
+      <!--<button @click="sortByTag('generation')">ユニット順</button>-->
+      <!--<button @click="sortByTag('talent')">タレント順</button>-->
+      <!--<button @click="sortByTag('category')">カテゴリ順</button>-->
       <button @click="downloadImage">画像保存</button>
     </div>
     <div id="cart-list-image">
@@ -23,7 +23,16 @@
               <div class="cart-product-name">{{ item.product.name }}</div>
             </td>
             <td data-label="値段" class="cart-product-price">￥{{ item.product.price.toLocaleString() }}</td>
-            <td data-label="数量">{{ item.quantity }}</td>
+            <td data-label="数量">
+              <template v-if="!isDownloadingImage">
+                <div class="qty-row-amazon">
+                  <input type="number" v-model.number="localQuantities[item.product.id]" min="1" class="qty-input" @change="onQtyInput(item.product.id)" />
+                </div>
+              </template>
+              <template v-else>
+                {{ item.quantity }}
+              </template>
+            </td>
             <td data-label="合計">
               ￥{{ (item.product.price * item.quantity).toLocaleString() }}
             </td>
@@ -47,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from "vue";
+import { ref, computed, nextTick, watch } from "vue";
 import html2canvas from "html2canvas";
 const props = defineProps({
   cart: Array,
@@ -57,15 +66,46 @@ const props = defineProps({
 const emit = defineEmits(["remove-from-cart"]);
 const sortKey = ref("generation");
 const isDownloadingImage = ref(false);
-const sortedCart = computed(() => {
-  const key = sortKey.value;
-  const order = props.tagOrder[key];
-  return [...props.cart].sort((a, b) => {
-    const aIdx = order.indexOf(a.product[key]);
-    const bIdx = order.indexOf(b.product[key]);
-    if (aIdx !== bIdx) return aIdx - bIdx;
-    return a.product.id - b.product.id;
+// 商品ソート用共通関数（ProductList.vueと同じロジック、タグ数優先）
+function sortProductsByTagOrder(list, tagOrder) {
+  const genOrder = tagOrder.generation;
+  const talentOrder = tagOrder.talent;
+  const catOrder = tagOrder.category;
+  return list.slice().sort((a, b) => {
+    const aGenArr = [].concat(a.product ? a.product.generation : a.generation || []);
+    const bGenArr = [].concat(b.product ? b.product.generation : b.generation || []);
+    if (aGenArr.length !== bGenArr.length) return bGenArr.length - aGenArr.length;
+    const aGenIdx = Math.min(...aGenArr.map(g => genOrder.indexOf(g)).filter(i => i >= 0), 9999);
+    const bGenIdx = Math.min(...bGenArr.map(g => genOrder.indexOf(g)).filter(i => i >= 0), 9999);
+    if (aGenIdx !== bGenIdx) return aGenIdx - bGenIdx;
+    const aTalArr = [].concat(a.product ? a.product.talent : a.talent || []);
+    const bTalArr = [].concat(b.product ? b.product.talent : b.talent || []);
+    if (aTalArr.length !== bTalArr.length) return bTalArr.length - aTalArr.length;
+    const aTalIdx = Math.min(...aTalArr.map(t => talentOrder.indexOf(t)).filter(i => i >= 0), 9999);
+    const bTalIdx = Math.min(...bTalArr.map(t => talentOrder.indexOf(t)).filter(i => i >= 0), 9999);
+    if (aTalIdx !== bTalIdx) return aTalIdx - bTalIdx;
+    const aCatArr = [].concat(a.product ? a.product.category : a.category || []);
+    const bCatArr = [].concat(b.product ? b.product.category : b.category || []);
+    if (aCatArr.length !== bCatArr.length) return bCatArr.length - aCatArr.length;
+    const aCatIdx = Math.min(...aCatArr.map(c => catOrder.indexOf(c)).filter(i => i >= 0), 9999);
+    const bCatIdx = Math.min(...bCatArr.map(c => catOrder.indexOf(c)).filter(i => i >= 0), 9999);
+    if (aCatIdx !== bCatIdx) return aCatIdx - bCatIdx;
+    if (a.product && b.product) {
+      if (!isNaN(Number(a.product.id)) && !isNaN(Number(b.product.id))) {
+        return Number(a.product.id) - Number(b.product.id);
+      }
+      return String(a.product.id).localeCompare(String(b.product.id), 'ja');
+    } else {
+      if (!isNaN(Number(a.id)) && !isNaN(Number(b.id))) {
+        return Number(a.id) - Number(b.id);
+      }
+      return String(a.id).localeCompare(String(b.id), 'ja');
+    }
   });
+}
+
+const sortedCart = computed(() => {
+  return sortProductsByTagOrder(props.cart, props.tagOrder);
 });
 const totalPrice = computed(() =>
   props.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
@@ -87,6 +127,35 @@ async function downloadImage() {
 }
 function removeItem(productId) {
   emit("remove-from-cart", productId);
+}
+// 数量変更用ローカル状態
+const localQuantities = ref({});
+watch(
+  () => props.cart.map(item => ({ id: item.product.id, quantity: item.quantity })),
+  (val) => {
+    val.forEach((item) => {
+      // localQuantitiesに未定義（undefinedやnull、空文字、NaNも含む）の場合のみ初期化
+      if (
+        localQuantities.value[item.id] === undefined ||
+        localQuantities.value[item.id] === null ||
+        localQuantities.value[item.id] === '' ||
+        isNaN(localQuantities.value[item.id])
+      ) {
+        localQuantities.value[item.id] = item.quantity;
+      }
+    });
+  },
+  { immediate: true }
+);
+function changeQty(id, diff) {
+  const newVal = Math.max(1, (localQuantities.value[id] || 1) + diff);
+  localQuantities.value[id] = newVal;
+  emit('update-quantity', id, newVal);
+}
+function onQtyInput(id) {
+  const newVal = Math.max(1, Number(localQuantities.value[id]) || 1);
+  localQuantities.value[id] = newVal;
+  emit('update-quantity', id, newVal);
 }
 </script>
 
@@ -205,6 +274,25 @@ body,
   text-align: right;
   padding-left: 0.1em;
   padding-right: 0.1em;
+}
+.qty-row-amazon {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.3em;
+  justify-content: center !important;
+  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.5em;
+}
+.qty-input {
+  width: 2.2em;
+  min-width: 0;
+  max-width: 100%;
+  text-align: right;
+  font-size: 1em;
+  letter-spacing: 0.05em;
 }
 @media (max-width: 600px) {
   table,

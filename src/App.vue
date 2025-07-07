@@ -9,10 +9,18 @@ const productsRaw = ref(productsData);
 
 // 商品データからタグ一覧を自動生成
 const tagOrder = computed(() => {
+  // タグフラグtrueのID順でソート
+  const tagFlagTrue = productsRaw.value.filter(p => p.tagFlag).sort((a, b) => {
+    // IDが数値なら数値比較、文字列なら文字列比較
+    if (!isNaN(Number(a.id)) && !isNaN(Number(b.id))) {
+      return Number(a.id) - Number(b.id);
+    }
+    return String(a.id).localeCompare(String(b.id), 'ja');
+  });
   const gens = [];
   const talents = [];
   const cats = [];
-  productsRaw.value.forEach((p) => {
+  tagFlagTrue.forEach((p) => {
     (Array.isArray(p.generation) ? p.generation : (p.generation ? [p.generation] : [])).forEach(g => { if (g && !gens.includes(g)) gens.push(g); });
     (Array.isArray(p.talent) ? p.talent : (p.talent ? [p.talent] : [])).forEach(t => { if (t && !talents.includes(t)) talents.push(t); });
     (Array.isArray(p.category) ? p.category : (p.category ? [p.category] : [])).forEach(c => { if (c && !cats.includes(c)) cats.push(c); });
@@ -26,19 +34,40 @@ const tagOrder = computed(() => {
 
 // 商品一覧はタグ順でソート
 const products = computed(() => {
+  // タグフラグtrueのID順でタグ順序を決定
+  const tagFlagTrue = productsRaw.value.filter(p => p.tagFlag).sort((a, b) => {
+    if (!isNaN(Number(a.id)) && !isNaN(Number(b.id))) {
+      return Number(a.id) - Number(b.id);
+    }
+    return String(a.id).localeCompare(String(b.id), 'ja');
+  });
+  // タグごとの順序リスト
+  const genOrder = [];
+  const talentOrder = [];
+  const catOrder = [];
+  tagFlagTrue.forEach((p) => {
+    (Array.isArray(p.generation) ? p.generation : (p.generation ? [p.generation] : [])).forEach(g => { if (g && !genOrder.includes(g)) genOrder.push(g); });
+    (Array.isArray(p.talent) ? p.talent : (p.talent ? [p.talent] : [])).forEach(t => { if (t && !talentOrder.includes(t)) talentOrder.push(t); });
+    (Array.isArray(p.category) ? p.category : (p.category ? [p.category] : [])).forEach(c => { if (c && !catOrder.includes(c)) catOrder.push(c); });
+  });
   return productsRaw.value.slice().sort((a, b) => {
     // ジェネレーション
-    const genA = Math.min(...(a.generation ? [].concat(a.generation) : []).map(g => tagOrder.value.generation.indexOf(g)).filter(i => i >= 0));
-    const genB = Math.min(...(b.generation ? [].concat(b.generation) : []).map(g => tagOrder.value.generation.indexOf(g)).filter(i => i >= 0));
+    const genA = Math.min(...(a.generation ? [].concat(a.generation) : []).map(g => genOrder.indexOf(g)).filter(i => i >= 0));
+    const genB = Math.min(...(b.generation ? [].concat(b.generation) : []).map(g => genOrder.indexOf(g)).filter(i => i >= 0));
     if (genA !== genB) return genA - genB;
     // タレント
-    const talA = Math.min(...(a.talent ? [].concat(a.talent) : []).map(t => tagOrder.value.talent.indexOf(t)).filter(i => i >= 0));
-    const talB = Math.min(...(b.talent ? [].concat(b.talent) : []).map(t => tagOrder.value.talent.indexOf(t)).filter(i => i >= 0));
+    const talA = Math.min(...(a.talent ? [].concat(a.talent) : []).map(t => talentOrder.indexOf(t)).filter(i => i >= 0));
+    const talB = Math.min(...(b.talent ? [].concat(b.talent) : []).map(t => talentOrder.indexOf(t)).filter(i => i >= 0));
     if (talA !== talB) return talA - talB;
     // カテゴリ
-    const catA = Math.min(...(a.category ? [].concat(a.category) : []).map(c => tagOrder.value.category.indexOf(c)).filter(i => i >= 0));
-    const catB = Math.min(...(b.category ? [].concat(b.category) : []).map(c => tagOrder.value.category.indexOf(c)).filter(i => i >= 0));
-    return catA - catB;
+    const catA = Math.min(...(a.category ? [].concat(a.category) : []).map(c => catOrder.indexOf(c)).filter(i => i >= 0));
+    const catB = Math.min(...(b.category ? [].concat(b.category) : []).map(c => catOrder.indexOf(c)).filter(i => i >= 0));
+    if (catA !== catB) return catA - catB;
+    // すべて同じ場合はID順
+    if (!isNaN(Number(a.id)) && !isNaN(Number(b.id))) {
+      return Number(a.id) - Number(b.id);
+    }
+    return String(a.id).localeCompare(String(b.id), 'ja');
   });
 });
 
@@ -67,6 +96,14 @@ function removeFromCart(productId) {
     cart.value.splice(idx, 1);
   }
 }
+
+// カート内商品の数量を変更する
+function updateCartQuantity(productId, newQty) {
+  const idx = cart.value.findIndex((item) => item.product.id === productId);
+  if (idx !== -1) {
+    cart.value[idx].quantity = newQty;
+  }
+}
 </script>
 
 <template>
@@ -83,6 +120,7 @@ function removeFromCart(productId) {
       :tagOrder="tagOrder"
       :products="products"
       @remove-from-cart="removeFromCart"
+      @update-quantity="updateCartQuantity"
     />
     <!-- タグ順序設定UIは後で追加 -->
   </div>
