@@ -119,8 +119,18 @@ async function downloadImage() {
   const el = document.getElementById("cart-list-image");
   await html2canvas(el).then((canvas) => {
     const link = document.createElement("a");
+    // タイムスタンプ付きファイル名生成
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    const y = now.getFullYear();
+    const m = pad(now.getMonth() + 1);
+    const d = pad(now.getDate());
+    const h = pad(now.getHours());
+    const min = pad(now.getMinutes());
+    const s = pad(now.getSeconds());
+    const filename = `c106-fsp_${y}${m}${d}${h}${min}${s}.png`;
     link.href = canvas.toDataURL("image/png");
-    link.download = "cart.png";
+    link.download = filename;
     link.click();
   });
   isDownloadingImage.value = false;
