@@ -238,7 +238,7 @@ tbody td:nth-child(4) {
   width: 1%;
   min-width: 75px;
   max-width: 80px;
-  text-align: right;
+  text-align: right !important;
   padding-left: 0.1em;
   padding-right: 0.1em;
   font-size: clamp(0.8em, 1.2vw, 1.0em);
@@ -316,6 +316,10 @@ body,
     padding: 0.4em 0.3em;
     font-size: 0.95em;
     word-break: break-word;
+  }
+  th:nth-child(4),
+  td:nth-child(4) {
+    text-align: right !important;
   }
   .cart-total-row td {
     text-align: right;
