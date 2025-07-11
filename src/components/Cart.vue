@@ -1,11 +1,5 @@
 <template>
   <div>
-    <div>
-      <!--<button @click="sortByTag('generation')">ユニット順</button>-->
-      <!--<button @click="sortByTag('talent')">タレント順</button>-->
-      <!--<button @click="sortByTag('category')">カテゴリ順</button>-->
-      <button @click="downloadImage">画像保存</button>
-    </div>
     <div id="cart-list-image">
       <table border="1" style="margin-top: 1em; width: 100%">
         <thead>
@@ -52,6 +46,9 @@
         </tbody>
       </table>
     </div>
+    <div>
+      <button @click="downloadImage">画像保存</button>
+    </div>
   </div>
 </template>
 
@@ -64,7 +61,6 @@ const props = defineProps({
   products: Array,
 });
 const emit = defineEmits(["remove-from-cart"]);
-const sortKey = ref("generation");
 const isDownloadingImage = ref(false);
 // 商品ソート用共通関数（ProductList.vueと同じロジック、タグ数優先）
 function sortProductsByTagOrder(list, tagOrder) {
@@ -104,15 +100,8 @@ function sortProductsByTagOrder(list, tagOrder) {
   });
 }
 
-const sortedCart = computed(() => {
-  return sortProductsByTagOrder(props.cart, props.tagOrder);
-});
-const totalPrice = computed(() =>
-  props.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-);
-function sortByTag(key) {
-  sortKey.value = key;
-}
+const sortedCart = computed(() => sortProductsByTagOrder(props.cart, props.tagOrder));
+const totalPrice = computed(() => props.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0));
 async function downloadImage() {
   isDownloadingImage.value = true;
   await nextTick();
@@ -144,15 +133,8 @@ watch(
   () => props.cart.map(item => ({ id: item.product.id, quantity: item.quantity })),
   (val) => {
     val.forEach((item) => {
-      // localQuantitiesに未定義（undefinedやnull、空文字、NaNも含む）の場合のみ初期化
-      if (
-        localQuantities.value[item.id] === undefined ||
-        localQuantities.value[item.id] === null ||
-        localQuantities.value[item.id] === '' ||
-        isNaN(localQuantities.value[item.id])
-      ) {
-        localQuantities.value[item.id] = item.quantity;
-      }
+      // 親から渡されたcartの数量で常に上書き
+      localQuantities.value[item.id] = item.quantity;
     });
   },
   { immediate: true }
@@ -206,8 +188,8 @@ th {
 thead th:nth-child(1),
 tbody td:nth-child(1) {
   width: 1%;
-  min-width: 200px;
-  max-width: 200px;
+  min-width: 300px;
+  max-width: 300px;
   text-align: left;
   padding-left: 0.2em;
   padding-right: 0.2em;
@@ -297,7 +279,7 @@ body,
   margin-top: 0.5em;
 }
 .qty-input {
-  width: 2.2em;
+  width: 3.2em;
   min-width: 0;
   max-width: 100%;
   text-align: right;
