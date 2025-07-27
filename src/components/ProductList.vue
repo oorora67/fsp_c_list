@@ -50,7 +50,14 @@
           </td>
           <td class="product-name-cell">
             <div class="product-row-mobile">
-              <div class="product-name">{{ product.name }}</div>
+              <div class="product-name">
+                <template v-if="product.url">
+                  <a :href="product.url" target="_blank" rel="noopener noreferrer" class="plain-link">{{ product.name }}</a>
+                </template>
+                <template v-else>
+                  {{ product.name }}
+                </template>
+              </div>
               <div class="product-price">￥{{ product.price.toLocaleString() }}</div>
             </div>
             <div class="product-tags">
@@ -251,6 +258,19 @@ watch(
 </script>
 
 <style scoped>
+/* 商品名リンクの色や装飾を通常テキストと同じに */
+.plain-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.plain-link:visited {
+  color: inherit;
+}
+.plain-link:hover {
+  color: inherit;
+  text-decoration: underline dotted #aaa;
+}
 body {
   background: #fff !important;
 }
@@ -352,14 +372,36 @@ body {
 }
 .tag-badge:hover,
 .tag-list-badge:hover {
-  background: #bbdefb;
-  color: #125199;
+  filter: brightness(0.95);
+  text-decoration: underline dotted #aaa;
+}
+.generation-badge:hover,
+.tag-list-badge.generation-badge:hover {
+  background: #1976d2;
+  color: #fff;
   border-color: #1976d2;
+}
+.talent-badge:hover,
+.tag-list-badge.talent-badge:hover {
+  background: #c2185b;
+  color: #fff;
+  border-color: #c2185b;
+}
+.category-badge:hover,
+.tag-list-badge.category-badge:hover {
+  background: #388e3c;
+  color: #fff;
+  border-color: #388e3c;
 }
 .tag-filter-bar {
   margin-bottom: 1em;
   font-weight: bold;
   color: #1976d2;
+}
+.tag-filter-bar .tag-badge,
+.tag-filter-bar .tag-list-badge {
+  font-size: 0.65em;
+  padding: 0.05em 0.4em;
 }
 .tag-filter-bar button,
 .tag-clear-btn {

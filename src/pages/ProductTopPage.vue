@@ -1,6 +1,8 @@
 <template>
   <div>
     <h1>商品一覧</h1>
+    <p>このサイトは、非公式です。<br></p>
+    <p><a href="https://firststage-pro.com/">FIRST STAGE PRODUCTION</a>の公式サイトではありません。</p>
     <ProductList
       :products="products"
       :tagOrder="tagOrder"
@@ -153,7 +155,8 @@ function updateCartQuantity(productId, newQty) {
   cursor: pointer;
 }
 h1,
-h2 {
+h2,
+p {
   margin-top: 1em;
   color: #1976d2;
   text-shadow: 0 1px 4px #e3f2fd;

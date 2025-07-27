@@ -1,6 +1,8 @@
 <template>
   <div class="list-page">
     <h1>リスト</h1>
+    <p>このサイトは、非公式です。<br></p>
+    <p><a href="https://firststage-pro.com/">FIRST STAGE PRODUCTION</a>の公式サイトではありません。</p>
     <Cart :cart="cart" :tagOrder="tagOrder" :products="products" 
       @remove-from-cart="removeFromCart" 
       @update-quantity="updateCartQuantity" />
@@ -92,7 +94,8 @@ function goBackWithCart() {
   background: #fff;
 }
 h1,
-h2 {
+h2,
+p {
   margin-top: 1em;
   color: #1976d2;
   text-shadow: 0 1px 4px #e3f2fd;

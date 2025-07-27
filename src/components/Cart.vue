@@ -14,7 +14,14 @@
         <tbody>
           <tr v-for="item in sortedCart" :key="item.product.id">
             <td data-label="商品名">
-              <div class="cart-product-name">{{ item.product.name }}</div>
+              <div class="cart-product-name">
+                <template v-if="item.product.url">
+                  <a :href="item.product.url" target="_blank" rel="noopener noreferrer" class="plain-link">{{ item.product.name }}</a>
+                </template>
+                <template v-else>
+                  {{ item.product.name }}
+                </template>
+              </div>
             </td>
             <td data-label="値段" class="cart-product-price">￥{{ item.product.price.toLocaleString() }}</td>
             <td data-label="数量">
@@ -152,6 +159,19 @@ function onQtyInput(id) {
 </script>
 
 <style scoped>
+/* 商品名リンクの色や装飾を通常テキストと同じに */
+.plain-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.plain-link:visited {
+  color: inherit;
+}
+.plain-link:hover {
+  color: inherit;
+  text-decoration: underline dotted #aaa;
+}
 .remove-btn {
   background: #d32f2f;
   color: #fff;
